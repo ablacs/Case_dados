@@ -24,7 +24,7 @@ function debounce(fn, delay = 300) {
   };
 }
 
-// --- Task 1: Carregamento Inicial ---
+// --- Etapa 1: Carregamento inicial ---
 async function loadUsers() {
   renderLoading("Carregando usuários...");
   try {
@@ -40,7 +40,7 @@ async function loadUsers() {
   }
 }
 
-// --- Task 2: Seleção de Usuário ---
+// --- Etapa 2: Seleção de usuário ---
 async function loadUserPostsAndComments(userId) {
   const { posts, commentsByPostId } = await fetchUserData(userId);
   state.posts = posts;
@@ -82,7 +82,7 @@ async function handleUserSelect(event) {
   }
 }
 
-// --- Task 3: Alteração de Campos (filtros reativos com debounce) ---
+// --- Etapa 3: Alteração de campos (filtros reativos com debounce) ---
 function handleFilterChange(event) {
   const { id, value } = event.target;
   const numericValue = value === "" ? 0 : Number(value);
@@ -95,8 +95,8 @@ function handleFilterChange(event) {
 
 const debouncedFilterChange = debounce(handleFilterChange, 300);
 
-// --- Helper compartilhado: monta as linhas do relatório de TODOS os usuários ---
-// Usado pela Task 4 (exportar CSV), Task 5 (POST simulado) e pelo diferencial
+// --- Auxiliar compartilhado: monta as linhas do relatório de todos os usuários ---
+// Usado pela etapa 4 (exportar CSV), etapa 5 (POST simulado) e pelo diferencial
 // do Google Sheets, garantindo que os três caminhos usem exatamente o mesmo cálculo.
 async function buildAllUsersReportRows() {
   const { minChars, minPosts } = state.filters;
@@ -112,7 +112,7 @@ async function buildAllUsersReportRows() {
   );
 }
 
-// --- Task 4: Geração de Relatório (CSV de todos os usuários) ---
+// --- Etapa 4: Geração de relatório (CSV de todos os usuários) ---
 async function handleGenerateReport() {
   if (state.users.length === 0) return;
 
@@ -134,7 +134,7 @@ async function handleGenerateReport() {
   }
 }
 
-// --- Task 5: Simulação de Envio (POST /posts, adaptado de /reports) ---
+// --- Etapa 5: Simulação de envio (POST /posts, adaptado de /reports) ---
 async function handleSendReport() {
   if (state.users.length === 0) return;
 
@@ -143,8 +143,6 @@ async function handleSendReport() {
   try {
     const rows = await buildAllUsersReportRows();
     const response = await postReport({ report: rows });
-
-    console.log("Resposta do envio simulado:", response);
 
     const results = document.getElementById("results");
     results.innerHTML = `<p style="color: green;">Relatório enviado com sucesso! (ID simulado: ${response.id})</p>`;

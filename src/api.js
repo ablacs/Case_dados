@@ -9,8 +9,9 @@ async function request(path, options = {}) {
     return await response.json();
   } catch (error) {
     console.error(`[api] Falha na requisição para ${path}:`, error);
-    throw error;
-    renderError("Não foi possível acessar a API. Tente novamente mais tarde.");
+    throw new Error(`Falha na requisição para ${path}: ${error.message}`, {
+      cause: error,
+    });
   }
 }
 

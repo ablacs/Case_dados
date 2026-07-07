@@ -7,7 +7,7 @@ import {
   postReport,
 } from "./api.js";
 
-// --- Helper: substitui global.fetch por uma versão falsa para cada teste ---
+// --- Auxiliar: substitui global.fetch por uma versão falsa para cada teste ---
 function mockFetch(responseBody, { ok = true, status = 200 } = {}) {
   const calls = [];
   global.fetch = async (url, options) => {

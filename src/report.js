@@ -14,8 +14,8 @@ export function toCSV(rows) {
     "ID",
     "Nome",
     "Quantidade de Posts",
-    "Media de Caracteres",
-    "Media de Comentarios",
+    "Média de Caracteres",
+    "Média de Comentários",
     "Status",
   ];
   const lines = [headers.join(",")];

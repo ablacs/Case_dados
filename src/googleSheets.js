@@ -20,19 +20,40 @@ export async function sendToGoogleSheets(rows, webAppUrl) {
     throw new Error("URL do Google Apps Script não configurada.");
   }
 
-  const response = await fetch(webAppUrl, {
-    method: "POST",
-    headers: { "Content-Type": "text/plain;charset=utf-8" },
-    body: JSON.stringify({ report: rows }),
-  });
+  try {
+    const response = await fetch(webAppUrl, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({ report: rows }),
+    });
 
-  const result = await response.json();
+    if (!response.ok) {
+      throw new Error(
+        `Erro HTTP ${response.status} ao enviar para o Google Sheets.`,
+      );
+    }
 
-  if (!result.success) {
+    let result;
+    try {
+      result = await response.json();
+    } catch (error) {
+      throw new Error(
+        "O Google Apps Script não retornou uma resposta JSON válida.",
+        { cause: error },
+      );
+    }
+
+    if (!result.success) {
+      throw new Error(
+        result.error || "Erro desconhecido ao enviar para o Google Sheets.",
+      );
+    }
+
+    return result;
+  } catch (error) {
     throw new Error(
-      result.error || "Erro desconhecido ao enviar para o Google Sheets.",
+      `Não foi possível enviar para o Google Sheets: ${error.message}`,
+      { cause: error },
     );
   }
-
-  return result;
 }

@@ -47,7 +47,7 @@ test("toCSV: gera o cabeçalho correto", () => {
   const [header] = csv.split("\n");
   assert.equal(
     header,
-    "ID,Nome,Quantidade de Posts,Media de Caracteres,Media de Comentarios,Status",
+    "ID,Nome,Quantidade de Posts,Média de Caracteres,Média de Comentários,Status",
   );
 });
 
