@@ -30,7 +30,7 @@ async function loadUsers() {
     renderUserOptions(users);
     document.getElementById("results").innerHTML = "";
   } catch (error) {
-    console.error("Error", error);
+    console.error("Error ao carregar os usuários", error);
     renderError(
       "Não foi possível carregar os usuários. Tente recarregar a página.",
     );
@@ -73,7 +73,7 @@ async function handleUserSelect(event) {
     await loadUserPostsAndComments(userId);
     recalculateAndRender();
   } catch (error) {
-    console.error("Error", error);
+    console.error("Error ao carregas dados do usuário", error);
     renderError("Não foi possível carregar os dados desse usuário.");
   }
 }
@@ -117,7 +117,7 @@ async function handleGenerateReport() {
     }
     recalculateAndRender();
   } catch (error) {
-    console.error("Error", error);
+    console.error("Error ao gerar o relatório", error);
     renderError("Não foi possível gerar o relatório.");
   }
 }
