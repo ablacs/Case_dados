@@ -7,6 +7,7 @@ import {
   renderError,
   renderLoading,
   renderMetrics,
+  setControlsDisabled,
 } from "./render.js";
 import {
   calculateMetrics,
@@ -27,6 +28,7 @@ function debounce(fn, delay = 300) {
 // --- Etapa 1: Carregamento inicial ---
 async function loadUsers() {
   renderLoading("Carregando usuários...");
+  setControlsDisabled(true);
   try {
     const users = await getUsers();
     state.users = users;
@@ -37,6 +39,8 @@ async function loadUsers() {
     renderError(
       "Não foi possível carregar os usuários. Tente recarregar a página.",
     );
+  } finally {
+    setControlsDisabled(false);
   }
 }
 
@@ -72,6 +76,7 @@ async function handleUserSelect(event) {
 
   state.selectedUserId = userId;
   renderLoading("Carregando posts e comentários...");
+  setControlsDisabled(true);
 
   try {
     await loadUserPostsAndComments(userId);
@@ -79,13 +84,21 @@ async function handleUserSelect(event) {
   } catch (error) {
     console.error("Erro ao carregar dados do usuário:", error);
     renderError("Não foi possível carregar os dados desse usuário.");
+  } finally {
+    setControlsDisabled(false);
   }
 }
 
 // --- Etapa 3: Alteração de campos (filtros reativos com debounce) ---
 function handleFilterChange(event) {
   const { id, value } = event.target;
-  const numericValue = value === "" ? 0 : Number(value);
+  let numericValue = value === "" ? 0 : Number(value);
+
+  // Validação: nunca aceitar valores negativos ou não numéricos
+  if (Number.isNaN(numericValue) || numericValue < 0) {
+    numericValue = 0;
+    event.target.value = 0;
+  }
 
   if (id === "minChars") state.filters.minChars = numericValue;
   else if (id === "minPosts") state.filters.minPosts = numericValue;
@@ -117,6 +130,7 @@ async function handleGenerateReport() {
   if (state.users.length === 0) return;
 
   renderLoading("Gerando relatório de todos os usuários...");
+  setControlsDisabled(true);
 
   try {
     const rows = await buildAllUsersReportRows();
@@ -131,6 +145,8 @@ async function handleGenerateReport() {
   } catch (error) {
     console.error("Erro ao gerar relatório:", error);
     renderError("Não foi possível gerar o relatório.");
+  } finally {
+    setControlsDisabled(false);
   }
 }
 
@@ -139,6 +155,7 @@ async function handleSendReport() {
   if (state.users.length === 0) return;
 
   renderLoading("Enviando relatório...");
+  setControlsDisabled(true);
 
   try {
     const rows = await buildAllUsersReportRows();
@@ -149,6 +166,8 @@ async function handleSendReport() {
   } catch (error) {
     console.error("Erro ao enviar relatório:", error);
     renderError("Não foi possível enviar o relatório.");
+  } finally {
+    setControlsDisabled(false);
   }
 }
 
@@ -164,6 +183,7 @@ async function handleSendToSheets() {
   }
 
   renderLoading("Enviando relatório para o Google Sheets...");
+  setControlsDisabled(true);
 
   try {
     const rows = await buildAllUsersReportRows();
@@ -176,6 +196,8 @@ async function handleSendToSheets() {
     renderError(
       "Não foi possível enviar para o Google Sheets. Verifique a URL e tente novamente.",
     );
+  } finally {
+    setControlsDisabled(false);
   }
 }
 

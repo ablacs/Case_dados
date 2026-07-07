@@ -29,3 +29,17 @@ export function renderMetrics(user, metrics, status) {
     <p><strong>Status:</strong> ${status}</p>
   `;
 }
+export function setControlsDisabled(disabled) {
+  const ids = [
+    "userSelect",
+    "minChars",
+    "minPosts",
+    "generateReport",
+    "sendReport",
+    "sendToSheets",
+  ];
+  ids.forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) el.disabled = disabled;
+  });
+}
