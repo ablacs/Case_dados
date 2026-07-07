@@ -13,6 +13,7 @@ export function renderUserOptions(users) {
 export function clearResults() {
   const results = document.getElementById("results");
   results.className = "results-empty";
+  results.removeAttribute("role");
   results.replaceChildren();
 }
 
@@ -21,6 +22,11 @@ function renderMessage(message, type) {
   const paragraph = document.createElement("p");
 
   results.className = "";
+  results.removeAttribute("role");
+  if (type === "error") {
+    results.setAttribute("role", "alert");
+  }
+
   paragraph.className = `message message-${type}`;
   paragraph.textContent = message;
   results.replaceChildren(paragraph);
@@ -54,6 +60,7 @@ export function renderMetrics(user, metrics, status) {
   const grid = document.createElement("div");
 
   results.className = "";
+  results.removeAttribute("role");
   card.className = "metric-card";
   header.className = "metric-user";
   name.className = "metric-user-name";

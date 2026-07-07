@@ -139,11 +139,9 @@ async function handleGenerateReport() {
     const csv = toCSV(rows);
     downloadCSV("relatorio_usuarios.csv", csv);
 
-    if (state.selectedUserId) {
-      recalculateAndRender();
-    } else {
-      clearResults();
-    }
+    renderSuccess(
+      `Relatório CSV gerado com sucesso! ${rows.length} usuários exportados.`,
+    );
   } catch (error) {
     console.error("Erro ao gerar relatório:", error);
     renderError("Não foi possível gerar o relatório.");

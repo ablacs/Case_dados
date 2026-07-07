@@ -9,5 +9,6 @@ export const state = {
   },
   cache: {
     postsByUser: {},
+    commentsByPost: {},
   },
 };

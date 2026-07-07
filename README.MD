@@ -15,9 +15,10 @@ Solução para o case técnico de automação de processos orientada a eventos, 
 7. [Melhorias Adicionais (Além do Escopo Original)](#melhorias-adicionais-além-do-escopo-original)
 8. [Decisões Técnicas](#decisões-técnicas)
 9. [Problemas Encontrados e Soluções](#problemas-encontrados-e-soluções)
-10. [Como Executar](#como-executar)
-11. [Como Rodar os Testes](#como-rodar-os-testes)
-12. [Próximos Passos](#próximos-passos)
+10. [Integração com Google Sheets](#integração-com-google-sheets)
+11. [Como Executar](#como-executar)
+12. [Como Rodar os Testes](#como-rodar-os-testes)
+13. [Próximos Passos](#próximos-passos)
 
 ---
 
@@ -60,7 +61,8 @@ case_dados_automacoes/
     ├── metrics.test.js            → Testes unitários de metrics.js
     ├── report.test.js             → Testes unitários de report.js
     ├── api.test.js                → Testes unitários de api.js (com fetch mockado)
-    └── googleSheets.test.js       → Testes unitários de googleSheets.js (com fetch mockado)
+    ├── googleSheets.test.js       → Testes unitários de googleSheets.js (com fetch mockado)
+    └── userData.test.js           → Testes unitários de cache de posts e comentários
 ```
 
 ### Por que essa separação
@@ -169,10 +171,10 @@ Estes são os diferenciais explicitamente listados no case:
 
 | Diferencial                  | Status | Onde                                                                                     |
 | ---------------------------- | ------ | ---------------------------------------------------------------------------------------- |
-| Cache de dados               | ✅     | `state.cache.postsByUser` — evita refetch de posts já buscados                           |
+| Cache de dados               | ✅     | `state.cache.postsByUser` e `state.cache.commentsByPost` — evita refetch de posts e comentários já buscados |
 | Debounce em inputs           | ✅     | `debounce()` em `main.js`, aplicado aos dois filtros                                     |
 | Estrutura modular            | ✅     | Ver seção [Arquitetura](#arquitetura-do-sistema)                                         |
-| Testes unitários             | ✅     | 33 testes em `metrics.test.js`, `report.test.js`, `api.test.js` e `googleSheets.test.js` |
+| Testes unitários             | ✅     | 36 testes em `metrics.test.js`, `report.test.js`, `api.test.js`, `googleSheets.test.js` e `userData.test.js` |
 | Integração com Google Sheets | ✅     | `googleSheets.js` + Google Apps Script (Web App)                                         |
 
 ## Melhorias Adicionais (Além do Escopo Original)
@@ -181,11 +183,13 @@ Estes itens não são exigidos pelo case, mas foram adicionados para aproximar o
 
 | Melhoria                                          | Onde                                                        | Por quê                                                                                                                               |
 | ------------------------------------------------- | ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| Integração contínua (CI)                          | `.github/workflows/tests.yml`                               | Roda os 33 testes automaticamente a cada `push`/Pull Request na `main`, evitando que código quebrado seja mesclado sem ser percebido. |
+| Integração contínua (CI)                          | `.github/workflows/tests.yml`                               | Roda os 36 testes automaticamente a cada `push`/Pull Request na `main`, evitando que código quebrado seja mesclado sem ser percebido. |
 | Deploy automático (GitHub Pages)                  | [Demo ao vivo](https://ablacs.github.io/Case_dados/)        | Permite testar a aplicação diretamente no navegador, sem precisar clonar o repositório ou subir um servidor local.                    |
 | Validação de input                                | `main.js` (`handleFilterChange`) e `index.html` (`min="0"`) | Impede que valores negativos ou inválidos nos campos de filtro produzam resultados inconsistentes.                                    |
 | Estados de carregamento (controles desabilitados) | `render.js` (`setControlsDisabled`)                         | Evita cliques duplos disparando requisições concorrentes (condição de corrida) enquanto uma operação assíncrona está em andamento.    |
 | Interface de dashboard técnico                    | `index.html`, `style.css` e `render.js`                     | Organiza usuários, filtros, resultados e ações em painéis claros, com métricas grandes, status em selo e sem dependências externas.   |
+| Feedback acessível de status                      | `index.html` (`aria-live`) e `render.js`                    | Permite que leitores de tela sejam avisados quando mensagens de carregamento, erro ou sucesso mudam dinamicamente.                    |
+| Confirmação visual de CSV                         | `main.js` (`handleGenerateReport`)                          | Deixa claro que o relatório foi gerado e quantos usuários foram exportados, mesmo quando o download do navegador é discreto.           |
 
 ## Decisões Técnicas
 
@@ -195,11 +199,17 @@ Estes itens não são exigidos pelo case, mas foram adicionados para aproximar o
 
 **Estado centralizado (`state.js`).** Em vez de variáveis soltas em cada arquivo, todo o estado da aplicação vive em um único objeto exportado, atuando como fonte única da verdade. Isso evita inconsistências entre o que é mostrado na tela e os dados realmente carregados.
 
+**Cache de posts e comentários.** O cache começou pelos posts, mas foi estendido para comentários por post (`commentsByPost`) porque o fluxo de relatório reaproveita os mesmos dados várias vezes: seleção individual, geração de CSV, envio simulado e envio ao Google Sheets. Isso reduz requisições repetidas, deixa a aplicação mais rápida em interações subsequentes e diminui dependência de latência externa sem mudar a regra de negócio.
+
 **Separação entre dado bruto e dado filtrado.** `state.posts` sempre guarda os posts sem filtro nenhum aplicado. A cada mudança de filtro, o cálculo é refeito a partir do dado bruto — nunca em cima de um resultado já filtrado anteriormente. Isso evita bugs de "filtro cumulativo" indevido.
 
 **CSV gerado manualmente, sem biblioteca.** Como o formato de saída é simples (texto tabular), optamos por montar o CSV manualmente (incluindo o BOM UTF-8 para acentuação correta no Excel, e escaping de aspas/vírgulas em nomes) em vez de adicionar uma dependência externa (ex: SheetJS) só para essa finalidade.
 
 **Google Apps Script em vez da API oficial do Google Sheets.** Ver detalhamento na seção de Problemas e Soluções.
+
+**Não abrir a planilha automaticamente após o envio.** Avaliamos a possibilidade de abrir a planilha em uma nova aba ao clicar em "Enviar para Google Sheets", mas optamos por não fazer isso automaticamente. O campo usado na interface recebe a URL do Web App do Apps Script, não necessariamente a URL visual da planilha; além disso, abrir abas sem uma ação explícita pode ser bloqueado pelo navegador ou parecer intrusivo em uma ferramenta interna. A alternativa mais adequada seria adicionar, no futuro, um campo opcional para a URL da planilha e um link "Abrir planilha" exibido somente após envio bem-sucedido.
+
+**`aria-live` para feedback dinâmico.** Como o conteúdo de resultados muda sem recarregar a página, adicionamos `aria-live="polite"` ao container de resultados. Esse atributo informa tecnologias assistivas, como leitores de tela, que mudanças naquele trecho devem ser anunciadas. Usamos `polite` porque carregamentos e sucessos não precisam interromper imediatamente a leitura atual; para erros, `render.js` também aplica `role="alert"`, tornando a mensagem mais urgente.
 
 **Botões separados para "Gerar Relatório", "Enviar Relatório" e "Enviar para Google Sheets".** Cada botão representa uma responsabilidade distinta do sistema (exportar arquivo local vs. simular envio a um backend vs. integrar com uma planilha real), e mantê-los separados deixa mais claro, tanto no código quanto para quem avalia, que são três ações independentes — em vez de uma única ação "mágica" que faz tudo de uma vez.
 
@@ -235,7 +245,7 @@ Durante a escrita dos testes unitários, identificamos que valores como `162.945
 
 ### 5. Volume de requisições ao gerar relatório sem cache
 
-Ao gerar o relatório de todos os usuários sem nenhuma seleção prévia (cache vazio), o sistema dispara ~10 requisições de posts e, em seguida, dezenas de requisições de comentários em paralelo. Chegamos a suspeitar que isso causaria falhas de rede, mas os testes confirmaram (via aba Network, status `304`/`200` consistentes) que a JSONPlaceholder suporta esse volume sem problemas — o cache implementado ainda assim reduz requisições redundantes em usos subsequentes.
+Ao gerar o relatório de todos os usuários sem nenhuma seleção prévia (cache vazio), o sistema dispara ~10 requisições de posts e, em seguida, dezenas de requisições de comentários em paralelo. Chegamos a suspeitar que isso causaria falhas de rede, mas os testes confirmaram (via aba Network, status `304`/`200` consistentes) que a JSONPlaceholder suporta esse volume sem problemas. Ainda assim, o cache foi estendido para posts e comentários, reduzindo requisições redundantes em seleções e relatórios subsequentes.
 
 ### 6. Bugs pontuais de digitação durante o desenvolvimento
 
@@ -250,6 +260,57 @@ Ao escrever os testes unitários de `googleSheets.js`, ficou evidente que a impl
 Na primeira tentativa de configurar o CI, o workflow não disparava mesmo com o arquivo `tests.yml` presente no repositório remoto. A causa era um erro de digitação na estrutura de pastas: `.github/.workflows/` (com ponto antes de "workflows") em vez de `.github/workflows/` (sem ponto na segunda pasta). O GitHub exige esse caminho exato — sem ele, o workflow é silenciosamente ignorado, sem erro ou aviso visível.
 
 **Solução:** renomeada a pasta para o caminho correto (`.github/workflows/`), o que fez o workflow ser reconhecido e disparar normalmente a partir do commit seguinte.
+
+## Integração com Google Sheets
+
+Para testar o envio real para uma planilha, crie uma planilha no Google Sheets, abra **Extensões > Apps Script**, cole o código abaixo e publique como **Web App**. A URL gerada pelo Web App deve ser colada no campo "URL do Google Apps Script" da interface.
+
+```javascript
+function doPost(e) {
+  try {
+    const data = JSON.parse(e.postData.contents);
+    const rows = data.report;
+
+    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheets()[0];
+
+    if (sheet.getLastRow() === 0) {
+      sheet.appendRow([
+        "Data/Hora",
+        "ID",
+        "Nome",
+        "Quantidade de Posts",
+        "Media de Caracteres",
+        "Media de Comentarios",
+        "Status",
+      ]);
+    }
+
+    const timestamp = new Date().toLocaleString("pt-BR");
+
+    rows.forEach((row) => {
+      sheet.appendRow([
+        timestamp,
+        row.id,
+        row.nome,
+        row.quantidadePosts,
+        row.mediaCaracteres,
+        row.mediaComentarios,
+        row.status,
+      ]);
+    });
+
+    return ContentService
+      .createTextOutput(JSON.stringify({ success: true, rowsAdded: rows.length }))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch (error) {
+    return ContentService
+      .createTextOutput(JSON.stringify({ success: false, error: error.message }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+```
+
+Decidimos documentar o Apps Script no README porque a integração depende de uma configuração externa ao repositório. Sem esse exemplo, o código cliente estaria correto, mas a pessoa avaliadora teria que inferir o formato esperado pelo endpoint. O contrato é simples: a aplicação envia `{ report: [...] }`, e o Apps Script responde `{ success: true, rowsAdded: número }` em caso de sucesso.
 
 ## Como Executar
 
@@ -269,8 +330,8 @@ Na primeira tentativa de configurar o CI, o workflow não disparava mesmo com o 
 npm test
 ```
 
-Isso executa os 33 testes unitários cobrindo `metrics.js`, `report.js`, `api.js` e `googleSheets.js` (os dois últimos com `fetch` mockado, sem depender de rede real), usando o test runner nativo do Node.js (`node --test`). Os mesmos testes rodam automaticamente a cada `push` na branch `main`, via GitHub Actions (`.github/workflows/tests.yml`).
+Isso executa os 36 testes unitários cobrindo `metrics.js`, `report.js`, `api.js`, `googleSheets.js` e `userData.js` (os testes de integração HTTP usam `fetch` mockado, sem depender de rede real), usando o test runner nativo do Node.js (`node --test`). Os mesmos testes rodam automaticamente a cada `push` na branch `main`, via GitHub Actions (`.github/workflows/tests.yml`).
 
 ## Próximos Passos
 
-- **Aprimorar acessibilidade de feedback**: adicionar uma região `aria-live` para anunciar estados de carregamento, erro e sucesso a leitores de tela.
+- **Adicionar link opcional para abrir a planilha**: caso a interface passe a receber também a URL visual do Google Sheets, exibir um link "Abrir planilha" após envio bem-sucedido, em vez de abrir uma nova aba automaticamente.
