@@ -27,7 +27,11 @@ export function getCommentsByPost(postId) {
 }
 
 export function postReport(payload) {
-  return request("/reports", {
+  // Nota: a JSONPlaceholder não possui um recurso /reports real (retorna 404 — API
+  // só simula CRUD para seus 6 recursos fixos: /posts, /comments, /albums, /photos,
+  // /todos, /users). Usamos POST /posts como endpoint de simulação de envio,
+  // mantendo o payload do relatório no corpo da requisição.
+  return request("/posts", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
