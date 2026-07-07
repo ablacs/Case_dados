@@ -6,7 +6,19 @@ import {
   renderLoading,
   renderMetrics,
 } from "./render.js";
-import { calculateMetrics } from "./metrics.js";
+import {
+  calculateMetrics,
+  filterPostsByMinChars,
+  getUserStatus,
+} from "./metrics.js";
+
+function debounce(fn, delay = 300) {
+  let timeoutId;
+  return (...args) => {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => fn(...args), delay);
+  };
+}
 
 async function loadUsers() {
   renderLoading("Carregando usuários...");
@@ -42,10 +54,28 @@ async function loadUserPostsAndComments(userId) {
   });
 }
 
+function recalculateAndRender() {
+  if (!state.selectedUserId || state.posts.length === 0) return;
+
+  const { minChars, minPosts } = state.filters;
+
+  const filteredPosts = filterPostsByMinChars(state.posts, minChars);
+
+  const metrics = calculateMetrics(filteredPosts, state.commentsByPostId);
+  const status = getUserStatus(metrics.postCount, minPosts);
+
+  const user = state.users.find(
+    (u) => String(u.id) === String(state.selectedUserId),
+  );
+
+  renderMetrics(user, metrics, status);
+}
+
 async function handleUserSelect(event) {
   const userId = event.target.value;
 
   if (!userId) {
+    state.selectedUserId = null;
     document.getElementById("results").innerHTML = "";
     return;
   }
@@ -55,19 +85,37 @@ async function handleUserSelect(event) {
 
   try {
     await loadUserPostsAndComments(userId);
-
-    const metrics = calculateMetrics(state.posts, state.commentsByPostId);
-    const user = state.users.find((u) => String(u.id) === String(userId));
-    renderMetrics(user, metrics);
+    recalculateAndRender();
   } catch (error) {
     renderError("Não foi possível carregar os dados desse usuário.");
   }
 }
 
+function handleFilterChange(event) {
+  const { id, value } = event.target;
+  const numericValue = value === "" ? 0 : Number(value);
+
+  if (id === "minChars") {
+    state.filters.minChars = numericValue;
+  } else if (id === "minPosts") {
+    state.filters.minPosts = numericValue;
+  }
+
+  recalculateAndRender();
+}
+
+const debouncedFilterChange = debounce(handleFilterChange, 300);
+
 function bindEvents() {
   document
     .getElementById("userSelect")
     .addEventListener("change", handleUserSelect);
+  document
+    .getElementById("minChars")
+    .addEventListener("input", debouncedFilterChange);
+  document
+    .getElementById("minPosts")
+    .addEventListener("input", debouncedFilterChange);
 }
 
 async function init() {

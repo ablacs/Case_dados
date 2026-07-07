@@ -19,12 +19,13 @@ export function renderLoading(message = "Carregando...") {
   const results = document.getElementById("results");
   results.innerHTML = `<p>${message}</p>`;
 }
-export function renderMetrics(user, metrics) {
+export function renderMetrics(user, metrics, status) {
   const results = document.getElementById("results");
   results.innerHTML = `
     <p><strong>Usuário:</strong> ${user.name}</p>
     <p><strong>Quantidade de Posts:</strong> ${metrics.postCount}</p>
     <p><strong>Média de Caracteres:</strong> ${metrics.avgChars.toFixed(2)}</p>
     <p><strong>Média de Comentários por Post:</strong> ${metrics.avgComments.toFixed(2)}</p>
+    <p><strong>Status:</strong> ${status}</p>
   `;
 }

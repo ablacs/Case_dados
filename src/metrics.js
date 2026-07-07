@@ -24,3 +24,12 @@ export function calculateMetrics(posts, commentsByPostId) {
     avgComments: calculateAverageComments(posts, commentsByPostId),
   };
 }
+export function filterPostsByMinChars(posts, minChars) {
+  if (!minChars || minChars <= 0) return posts;
+  return posts.filter((post) => post.body.length >= minChars);
+}
+
+export function getUserStatus(postCount, minPosts) {
+  if (!minPosts || minPosts <= 0) return "Ativo"; // sem filtro, considera ativo por padrão
+  return postCount >= minPosts ? "Ativo" : "Inativo";
+}
