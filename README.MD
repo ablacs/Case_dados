@@ -185,6 +185,7 @@ Estes itens não são exigidos pelo case, mas foram adicionados para aproximar o
 | Deploy automático (GitHub Pages)                  | [Demo ao vivo](https://ablacs.github.io/Case_dados/)        | Permite testar a aplicação diretamente no navegador, sem precisar clonar o repositório ou subir um servidor local.                    |
 | Validação de input                                | `main.js` (`handleFilterChange`) e `index.html` (`min="0"`) | Impede que valores negativos ou inválidos nos campos de filtro produzam resultados inconsistentes.                                    |
 | Estados de carregamento (controles desabilitados) | `render.js` (`setControlsDisabled`)                         | Evita cliques duplos disparando requisições concorrentes (condição de corrida) enquanto uma operação assíncrona está em andamento.    |
+| Interface de dashboard técnico                    | `index.html`, `style.css` e `render.js`                     | Organiza usuários, filtros, resultados e ações em painéis claros, com métricas grandes, status em selo e sem dependências externas.   |
 
 ## Decisões Técnicas
 
@@ -272,4 +273,4 @@ Isso executa os 33 testes unitários cobrindo `metrics.js`, `report.js`, `api.js
 
 ## Próximos Passos
 
-- **Estilização com CSS puro** (`style.css`): a interface atual usa apenas o HTML semântico do template fornecido, sem nenhuma estilização visual. O próximo passo é adicionar hierarquia visual clara (espaçamento, tipografia, cores discretas para os status Ativo/Inativo), mantendo a filosofia de simplicidade já documentada — sem frameworks de CSS, apenas CSS nativo.
+- **Aprimorar acessibilidade de feedback**: adicionar uma região `aria-live` para anunciar estados de carregamento, erro e sucesso a leitores de tela.

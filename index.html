@@ -2,44 +2,88 @@
 <html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Test Case - Automação</title>
     <link rel="icon" href="data:," />
+    <link rel="stylesheet" href="style.css" />
   </head>
   <body>
-    <h1>Análise de Usuários</h1>
+    <div class="app-shell">
+      <header class="app-header">
+        <div>
+          <p class="eyebrow">Console de automação</p>
+          <h1>Análise de Usuários</h1>
+        </div>
+        <p class="app-summary">
+          Métricas dinâmicas de posts, comentários e status operacional.
+        </p>
+      </header>
 
-    <h2>Usuários</h2>
-    <select id="userSelect">
-      <option value="">Selecione um usuário</option>
-    </select>
+      <main class="dashboard-grid">
+        <section class="panel panel-users" aria-labelledby="usersTitle">
+          <div class="panel-header">
+            <p class="section-index">01</p>
+            <h2 id="usersTitle">Usuários</h2>
+          </div>
+          <label class="field">
+            <span>Usuário para análise</span>
+            <select id="userSelect">
+              <option value="">Selecione um usuário</option>
+            </select>
+          </label>
+        </section>
 
-    <h2>Filtros</h2>
+        <section class="panel panel-filters" aria-labelledby="filtersTitle">
+          <div class="panel-header">
+            <p class="section-index">02</p>
+            <h2 id="filtersTitle">Filtros</h2>
+          </div>
+          <div class="field-grid">
+            <label class="field">
+              <span>Mínimo de caracteres do post</span>
+              <input type="number" id="minChars" min="0" />
+            </label>
 
-    <label>Mínimo de caracteres do post:</label>
-    <input type="number" id="minChars" min="0" />
+            <label class="field">
+              <span>Mínimo de posts para ser ativo</span>
+              <input type="number" id="minPosts" min="0" />
+            </label>
+          </div>
+        </section>
 
-    <br /><br />
+        <section class="panel panel-results" aria-labelledby="resultsTitle">
+          <div class="panel-header">
+            <p class="section-index">03</p>
+            <h2 id="resultsTitle">Resultados</h2>
+          </div>
+          <div id="results" class="results-empty"></div>
+        </section>
 
-    <label>Mínimo de posts para ser ativo:</label>
-    <input type="number" id="minPosts" min="0" />
+        <section class="panel panel-actions" aria-labelledby="actionsTitle">
+          <div class="panel-header">
+            <p class="section-index">04</p>
+            <h2 id="actionsTitle">Ações</h2>
+          </div>
 
-    <h2>Resultados</h2>
-    <div id="results"></div>
+          <div class="actions-row">
+            <button id="generateReport" type="button">Gerar Relatório</button>
+            <button id="sendReport" type="button">Enviar Relatório</button>
+          </div>
 
-    <h2>Ações</h2>
-    <button id="generateReport">Gerar Relatório</button>
-    <button id="sendReport">Enviar Relatório</button>
-
-    <br /><br />
-
-    <label>URL do Google Apps Script:</label>
-    <input
-      type="text"
-      id="sheetsUrl"
-      placeholder="Cole aqui a URL do Web App"
-      style="width: 400px"
-    />
-    <button id="sendToSheets">Enviar para Google Sheets</button>
+          <div class="sheets-form">
+            <label class="field">
+              <span>URL do Google Apps Script</span>
+              <input
+                type="text"
+                id="sheetsUrl"
+                placeholder="Cole aqui a URL do Web App"
+              />
+            </label>
+            <button id="sendToSheets" type="button">Enviar para Google Sheets</button>
+          </div>
+        </section>
+      </main>
+    </div>
 
     <script type="module" src="src/main.js"></script>
   </body>

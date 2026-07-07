@@ -4,9 +4,11 @@ import { sendToGoogleSheets } from "./googleSheets.js";
 import { state } from "./state.js";
 import {
   renderUserOptions,
+  clearResults,
   renderError,
   renderLoading,
   renderMetrics,
+  renderSuccess,
   setControlsDisabled,
 } from "./render.js";
 import {
@@ -33,7 +35,7 @@ async function loadUsers() {
     const users = await getUsers();
     state.users = users;
     renderUserOptions(users);
-    document.getElementById("results").innerHTML = "";
+    clearResults();
   } catch (error) {
     console.error("Erro ao carregar usuários:", error);
     renderError(
@@ -70,7 +72,7 @@ async function handleUserSelect(event) {
 
   if (!userId) {
     state.selectedUserId = null;
-    document.getElementById("results").innerHTML = "";
+    clearResults();
     return;
   }
 
@@ -140,7 +142,7 @@ async function handleGenerateReport() {
     if (state.selectedUserId) {
       recalculateAndRender();
     } else {
-      document.getElementById("results").innerHTML = "";
+      clearResults();
     }
   } catch (error) {
     console.error("Erro ao gerar relatório:", error);
@@ -161,8 +163,7 @@ async function handleSendReport() {
     const rows = await buildAllUsersReportRows();
     const response = await postReport({ report: rows });
 
-    const results = document.getElementById("results");
-    results.innerHTML = `<p style="color: green;">Relatório enviado com sucesso! (ID simulado: ${response.id})</p>`;
+    renderSuccess(`Relatório enviado com sucesso! ID simulado: ${response.id}`);
   } catch (error) {
     console.error("Erro ao enviar relatório:", error);
     renderError("Não foi possível enviar o relatório.");
@@ -189,8 +190,9 @@ async function handleSendToSheets() {
     const rows = await buildAllUsersReportRows();
     const result = await sendToGoogleSheets(rows, webAppUrl);
 
-    const results = document.getElementById("results");
-    results.innerHTML = `<p style="color: green;">Enviado com sucesso! ${result.rowsAdded} linhas adicionadas na planilha.</p>`;
+    renderSuccess(
+      `Enviado com sucesso! ${result.rowsAdded} linhas adicionadas na planilha.`,
+    );
   } catch (error) {
     console.error("Erro ao enviar para o Google Sheets:", error);
     renderError(
