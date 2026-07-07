@@ -2,6 +2,8 @@
 
 Solução para o case técnico de automação de processos orientada a eventos, consumindo a API pública [JSONPlaceholder](https://jsonplaceholder.typicode.com/) para análise dinâmica de usuários, posts e comentários.
 
+**Demo ao vivo:** [https://ablacs.github.io/Case_dados/](https://ablacs.github.io/Case_dados/)
+
 ## Índice
 
 1. [Visão Geral](#visão-geral)
@@ -10,10 +12,12 @@ Solução para o case técnico de automação de processos orientada a eventos, 
 4. [Fluxo de Eventos](#fluxo-de-eventos)
 5. [Funcionalidades Implementadas (Tasks)](#funcionalidades-implementadas-tasks)
 6. [Diferenciais Implementados](#diferenciais-implementados)
-7. [Decisões Técnicas](#decisões-técnicas)
-8. [Problemas Encontrados e Soluções](#problemas-encontrados-e-soluções)
-9. [Como Executar](#como-executar)
-10. [Como Rodar os Testes](#como-rodar-os-testes)
+7. [Melhorias Adicionais (Além do Escopo Original)](#melhorias-adicionais-além-do-escopo-original)
+8. [Decisões Técnicas](#decisões-técnicas)
+9. [Problemas Encontrados e Soluções](#problemas-encontrados-e-soluções)
+10. [Como Executar](#como-executar)
+11. [Como Rodar os Testes](#como-rodar-os-testes)
+12. [Próximos Passos](#próximos-passos)
 
 ---
 
@@ -27,6 +31,8 @@ O sistema é uma tela de análise de usuários para um cenário simulado de sist
 - **Fetch API** nativa do navegador para consumo de HTTP (GET e POST).
 - **Node.js test runner nativo** (`node --test`) para os testes unitários — sem dependência de Jest/Vitest.
 - **Google Apps Script** (JavaScript rodando no ambiente do Google) para o diferencial de integração com Google Sheets.
+- **GitHub Actions** para integração contínua (rodar os testes automaticamente a cada push).
+- **GitHub Pages** para publicação da demo ao vivo, sem custo e sem servidor próprio (o projeto é 100% estático).
 - Nenhuma biblioteca externa de terceiros foi usada no código-fonte da aplicação (sem React, sem jQuery, sem SheetJS) — a geração de CSV foi implementada manualmente.
 
 ## Arquitetura do Sistema
@@ -35,7 +41,11 @@ O código é organizado em módulos com responsabilidades únicas e bem definida
 
 ```
 case_dados_automacoes/
+├── .github/
+│   └── workflows/
+│       └── tests.yml          → Workflow de CI: roda os testes a cada push/PR na main
 ├── index.html                 → Template da interface (HTML fornecido, com ajustes)
+├── style.css                   → Estilização da interface
 ├── package.json                → Metadados e script de testes
 ├── README.md                   → Este documento
 └── src/
@@ -88,7 +98,7 @@ O sistema é inteiramente orientado a eventos. Não há polling nem atualizaçã
   Renderiza resultados na tela
         │
         ▼
-[Usuário digita em "Mínimo de caracteres" ou "Mínimo de posts"]  (evento: input, com debounce de 300ms)
+[Usuário digita em "Mínimo de caracteres" ou "Mínimo de posts"]  (evento: input, com debounce de 300ms e validação contra valores negativos)
         │
         ▼
   Filtra os posts brutos já carregados (sem nova requisição)
@@ -100,7 +110,7 @@ O sistema é inteiramente orientado a eventos. Não há polling nem atualizaçã
   Renderiza resultados atualizados
         │
         ▼
-[Usuário clica em "Gerar Relatório"]  (evento: click)
+[Usuário clica em "Gerar Relatório"]  (evento: click — controles desabilitados durante a operação)
         │
         ▼
   Busca (ou reaproveita do cache) dados de TODOS os usuários em paralelo
@@ -112,13 +122,13 @@ O sistema é inteiramente orientado a eventos. Não há polling nem atualizaçã
   Gera CSV e dispara o download no navegador
         │
         ▼
-[Usuário clica em "Enviar Relatório"]  (evento: click)
+[Usuário clica em "Enviar Relatório"]  (evento: click — controles desabilitados durante a operação)
         │
         ▼
   Monta as mesmas linhas do relatório e envia via POST /posts (simulação)
         │
         ▼
-[Usuário clica em "Enviar para Google Sheets"]  (evento: click)
+[Usuário clica em "Enviar para Google Sheets"]  (evento: click — controles desabilitados durante a operação)
         │
         ▼
   Monta as mesmas linhas e envia via POST para o Google Apps Script Web App
@@ -141,7 +151,7 @@ Dois campos reagem em tempo real, sem necessidade de clique em botão:
 - **Mínimo de caracteres do post**: filtra os posts considerados no cálculo de métricas.
 - **Mínimo de posts para ser ativo**: define o status do usuário como "Ativo" ou "Inativo".
 
-Ambos usam debounce de 300ms para evitar recálculo excessivo a cada tecla digitada.
+Ambos usam debounce de 300ms para evitar recálculo excessivo a cada tecla digitada, e validam contra valores negativos ou inválidos (ver [Melhorias Adicionais](#melhorias-adicionais-além-do-escopo-original)).
 
 ### Task 4 — Geração de Relatório
 
@@ -155,6 +165,8 @@ O botão "Enviar Relatório" envia o mesmo conjunto de dados do relatório via r
 
 ## Diferenciais Implementados
 
+Estes são os diferenciais explicitamente listados no case:
+
 | Diferencial                  | Status | Onde                                                                                     |
 | ---------------------------- | ------ | ---------------------------------------------------------------------------------------- |
 | Cache de dados               | ✅     | `state.cache.postsByUser` — evita refetch de posts já buscados                           |
@@ -162,6 +174,17 @@ O botão "Enviar Relatório" envia o mesmo conjunto de dados do relatório via r
 | Estrutura modular            | ✅     | Ver seção [Arquitetura](#arquitetura-do-sistema)                                         |
 | Testes unitários             | ✅     | 33 testes em `metrics.test.js`, `report.test.js`, `api.test.js` e `googleSheets.test.js` |
 | Integração com Google Sheets | ✅     | `googleSheets.js` + Google Apps Script (Web App)                                         |
+
+## Melhorias Adicionais (Além do Escopo Original)
+
+Estes itens não são exigidos pelo case, mas foram adicionados para aproximar o projeto de práticas usadas em ambientes profissionais reais:
+
+| Melhoria                                          | Onde                                                        | Por quê                                                                                                                               |
+| ------------------------------------------------- | ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| Integração contínua (CI)                          | `.github/workflows/tests.yml`                               | Roda os 33 testes automaticamente a cada `push`/Pull Request na `main`, evitando que código quebrado seja mesclado sem ser percebido. |
+| Deploy automático (GitHub Pages)                  | [Demo ao vivo](https://ablacs.github.io/Case_dados/)        | Permite testar a aplicação diretamente no navegador, sem precisar clonar o repositório ou subir um servidor local.                    |
+| Validação de input                                | `main.js` (`handleFilterChange`) e `index.html` (`min="0"`) | Impede que valores negativos ou inválidos nos campos de filtro produzam resultados inconsistentes.                                    |
+| Estados de carregamento (controles desabilitados) | `render.js` (`setControlsDisabled`)                         | Evita cliques duplos disparando requisições concorrentes (condição de corrida) enquanto uma operação assíncrona está em andamento.    |
 
 ## Decisões Técnicas
 
@@ -175,9 +198,15 @@ O botão "Enviar Relatório" envia o mesmo conjunto de dados do relatório via r
 
 **CSV gerado manualmente, sem biblioteca.** Como o formato de saída é simples (texto tabular), optamos por montar o CSV manualmente (incluindo o BOM UTF-8 para acentuação correta no Excel, e escaping de aspas/vírgulas em nomes) em vez de adicionar uma dependência externa (ex: SheetJS) só para essa finalidade.
 
-**Google Apps Script em vez da API oficial do Google Sheets.** Ver detalhamento na seção seguinte.
+**Google Apps Script em vez da API oficial do Google Sheets.** Ver detalhamento na seção de Problemas e Soluções.
 
 **Botões separados para "Gerar Relatório", "Enviar Relatório" e "Enviar para Google Sheets".** Cada botão representa uma responsabilidade distinta do sistema (exportar arquivo local vs. simular envio a um backend vs. integrar com uma planilha real), e mantê-los separados deixa mais claro, tanto no código quanto para quem avalia, que são três ações independentes — em vez de uma única ação "mágica" que faz tudo de uma vez.
+
+**CSS puro em vez de um framework de estilização (ex: Tailwind).** Pelo mesmo raciocínio de proporcionalidade aplicado à escolha de não usar um framework de JavaScript: a interface não tem complexidade visual suficiente para justificar a configuração de um build step (PostCSS) ou o carregamento de um framework inteiro via CDN. Um arquivo `style.css` único, usando variáveis CSS nativas, é suficiente e mantém a coerência da filosofia do projeto — ferramentas simples, escolhidas de forma proporcional ao problema.
+
+**GitHub Actions para CI, em vez de nenhuma automação.** Mesmo não sendo exigido pelo case, configurar um pipeline mínimo de testes automatizados é uma prática padrão em ambientes profissionais, e o custo de implementação foi baixo (menos de 15 linhas de YAML), dado que os testes unitários já existiam.
+
+**GitHub Pages para deploy, em vez de outro provedor (Vercel/Netlify).** Como o repositório já está hospedado no GitHub e o projeto não tem nenhuma etapa de build (é HTML/JS puro), o GitHub Pages elimina qualquer configuração extra de conta ou serviço externo — o deploy sai diretamente da mesma plataforma onde o código já vive.
 
 ## Problemas Encontrados e Soluções
 
@@ -215,10 +244,16 @@ Ao longo da implementação, surgiram alguns erros de digitação (nome de propr
 
 Ao escrever os testes unitários de `googleSheets.js`, ficou evidente que a implementação original não verificava `response.ok` (erros HTTP como 500 eram ignorados, caindo direto em uma mensagem genérica) nem tratava falhas de parse do JSON (uma resposta HTML de erro do Google, por exemplo, quebraria com um `SyntaxError` cru em vez de uma mensagem legível). Ajustamos a função para checar o status HTTP antes de tentar o parse, e envolver o parse em seu próprio `try/catch` com mensagem específica. Esse é um exemplo direto de como escrever testes primeiro (ou em paralelo) ajuda a encontrar lacunas de tratamento de erro que passariam despercebidas em testes manuais na interface.
 
+### 8. Pasta do workflow do GitHub Actions nomeada incorretamente
+
+Na primeira tentativa de configurar o CI, o workflow não disparava mesmo com o arquivo `tests.yml` presente no repositório remoto. A causa era um erro de digitação na estrutura de pastas: `.github/.workflows/` (com ponto antes de "workflows") em vez de `.github/workflows/` (sem ponto na segunda pasta). O GitHub exige esse caminho exato — sem ele, o workflow é silenciosamente ignorado, sem erro ou aviso visível.
+
+**Solução:** renomeada a pasta para o caminho correto (`.github/workflows/`), o que fez o workflow ser reconhecido e disparar normalmente a partir do commit seguinte.
+
 ## Como Executar
 
-1. Clone o repositório.
-2. Sirva os arquivos com um servidor local (módulos ES6 exigem HTTP, não funcionam via `file://`):
+1. Clone o repositório, ou acesse diretamente a [demo ao vivo](https://ablacs.github.io/Case_dados/).
+2. Para rodar localmente, sirva os arquivos com um servidor local (módulos ES6 exigem HTTP, não funcionam via `file://`):
    ```bash
    python3 -m http.server 8000
    # ou
@@ -233,4 +268,8 @@ Ao escrever os testes unitários de `googleSheets.js`, ficou evidente que a impl
 npm test
 ```
 
-Isso executa os 33 testes unitários cobrindo `metrics.js`, `report.js`, `api.js` e `googleSheets.js` (os dois últimos com `fetch` mockado, sem depender de rede real), usando o test runner nativo do Node.js (`node --test`).
+Isso executa os 33 testes unitários cobrindo `metrics.js`, `report.js`, `api.js` e `googleSheets.js` (os dois últimos com `fetch` mockado, sem depender de rede real), usando o test runner nativo do Node.js (`node --test`). Os mesmos testes rodam automaticamente a cada `push` na branch `main`, via GitHub Actions (`.github/workflows/tests.yml`).
+
+## Próximos Passos
+
+- **Estilização com CSS puro** (`style.css`): a interface atual usa apenas o HTML semântico do template fornecido, sem nenhuma estilização visual. O próximo passo é adicionar hierarquia visual clara (espaçamento, tipografia, cores discretas para os status Ativo/Inativo), mantendo a filosofia de simplicidade já documentada — sem frameworks de CSS, apenas CSS nativo.
