@@ -1,5 +1,6 @@
 import { getUsers, postReport } from "./api.js";
 import { fetchUserData } from "./userData.js";
+import { sendToGoogleSheets } from "./googleSheets.js";
 import { state } from "./state.js";
 import {
   renderUserOptions,
@@ -23,7 +24,7 @@ function debounce(fn, delay = 300) {
   };
 }
 
-//  Task 1: Carregamento Inicial
+// --- Task 1: Carregamento Inicial ---
 async function loadUsers() {
   renderLoading("Carregando usuários...");
   try {
@@ -39,7 +40,7 @@ async function loadUsers() {
   }
 }
 
-//  Task 2: Seleção de Usuário
+// --- Task 2: Seleção de Usuário ---
 async function loadUserPostsAndComments(userId) {
   const { posts, commentsByPostId } = await fetchUserData(userId);
   state.posts = posts;
@@ -81,7 +82,7 @@ async function handleUserSelect(event) {
   }
 }
 
-//  Task 3: Alteração de Campos (filtros reativos com debounce)
+// --- Task 3: Alteração de Campos (filtros reativos com debounce) ---
 function handleFilterChange(event) {
   const { id, value } = event.target;
   const numericValue = value === "" ? 0 : Number(value);
@@ -94,9 +95,9 @@ function handleFilterChange(event) {
 
 const debouncedFilterChange = debounce(handleFilterChange, 300);
 
-// Helper compartilhado: monta as linhas do relatório de TODOS os usuários
-// Usado tanto pela Task 4 (exportar CSV) quanto pela Task 5 (enviar via POST),
-// garantindo que os dois caminhos usem exatamente o mesmo cálculo.
+// --- Helper compartilhado: monta as linhas do relatório de TODOS os usuários ---
+// Usado pela Task 4 (exportar CSV), Task 5 (POST simulado) e pelo diferencial
+// do Google Sheets, garantindo que os três caminhos usem exatamente o mesmo cálculo.
 async function buildAllUsersReportRows() {
   const { minChars, minPosts } = state.filters;
 
@@ -111,7 +112,7 @@ async function buildAllUsersReportRows() {
   );
 }
 
-// Task 4: Geração de Relatório (CSV de todos os usuários)
+// --- Task 4: Geração de Relatório (CSV de todos os usuários) ---
 async function handleGenerateReport() {
   if (state.users.length === 0) return;
 
@@ -133,7 +134,7 @@ async function handleGenerateReport() {
   }
 }
 
-//  Task 5: Simulação de Envio (POST /reports)
+// --- Task 5: Simulação de Envio (POST /posts, adaptado de /reports) ---
 async function handleSendReport() {
   if (state.users.length === 0) return;
 
@@ -153,7 +154,34 @@ async function handleSendReport() {
   }
 }
 
-// Orquestração de eventos
+// --- Diferencial: Integração com Google Sheets ---
+async function handleSendToSheets() {
+  if (state.users.length === 0) return;
+
+  const webAppUrl = document.getElementById("sheetsUrl").value.trim();
+
+  if (!webAppUrl) {
+    renderError("Cole a URL do Google Apps Script antes de enviar.");
+    return;
+  }
+
+  renderLoading("Enviando relatório para o Google Sheets...");
+
+  try {
+    const rows = await buildAllUsersReportRows();
+    const result = await sendToGoogleSheets(rows, webAppUrl);
+
+    const results = document.getElementById("results");
+    results.innerHTML = `<p style="color: green;">Enviado com sucesso! ${result.rowsAdded} linhas adicionadas na planilha.</p>`;
+  } catch (error) {
+    console.error("Erro ao enviar para o Google Sheets:", error);
+    renderError(
+      "Não foi possível enviar para o Google Sheets. Verifique a URL e tente novamente.",
+    );
+  }
+}
+
+// --- Orquestração de eventos ---
 function bindEvents() {
   document
     .getElementById("userSelect")
@@ -170,6 +198,9 @@ function bindEvents() {
   document
     .getElementById("sendReport")
     .addEventListener("click", handleSendReport);
+  document
+    .getElementById("sendToSheets")
+    .addEventListener("click", handleSendToSheets);
 }
 
 async function init() {
