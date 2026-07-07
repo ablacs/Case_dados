@@ -43,3 +43,4 @@ export function setControlsDisabled(disabled) {
     if (el) el.disabled = disabled;
   });
 }
+//teste
