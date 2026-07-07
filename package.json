@@ -1,0 +1,8 @@
+{
+  "name": "case-dados-automacoes",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "test": "node --test src/metrics.test.js src/report.test.js src/api.test.js"
+  }
+}
