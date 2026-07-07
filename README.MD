@@ -22,6 +22,10 @@ Solução para o case técnico de automação de processos orientada a eventos, 
 
 ---
 
+## Sobre o projeto
+
+Este projeto foi desenvolvido como solução para um case técnico de processo seletivo. Procurei manter a implementação simples, utilizando apenas JavaScript nativo e módulos ES, priorizando organização, separação de responsabilidades e testes automatizados em vez da utilização de frameworks.
+
 ## Visão Geral
 
 O sistema é uma tela de análise de usuários para um cenário simulado de sistema interno. A interface reage dinamicamente a eventos de interação — seleção de usuário, alteração de filtros — consumindo a API JSONPlaceholder e recalculando métricas em tempo real, sem necessidade de recarregar a página ou clicar em botões de confirmação (exceto para as ações explícitas de gerar/enviar relatório).
@@ -159,7 +163,7 @@ Ambos usam debounce de 300ms para evitar recálculo excessivo a cada tecla digit
 
 O botão "Gerar Relatório" busca dados de **todos os usuários**, aplica os filtros atualmente configurados na tela a cada um deles, e exporta um arquivo CSV contendo: ID, Nome, Quantidade de Posts, Média de Caracteres, Média de Comentários e Status — para cada usuário.
 
-> **Decisão de escopo:** optamos por gerar o relatório de todos os usuários (não apenas o selecionado na tela), por ser a interpretação que mais se alinha a um "relatório" de análise de usuários em um sistema interno, e por demonstrar de forma mais completa o uso de `Promise.all` em escala.
+> **Decisão de escopo:** optei por gerar o relatório de todos os usuários (não apenas o selecionado na tela), por ser a interpretação que mais se alinha a um "relatório" de análise de usuários em um sistema interno, e por demonstrar de forma mais completa o uso de `Promise.all` em escala.
 
 ### Task 5 — Simulação de Envio
 
@@ -169,13 +173,13 @@ O botão "Enviar Relatório" envia o mesmo conjunto de dados do relatório via r
 
 Estes são os diferenciais explicitamente listados no case:
 
-| Diferencial                  | Status | Onde                                                                                     |
-| ---------------------------- | ------ | ---------------------------------------------------------------------------------------- |
-| Cache de dados               | ✅     | `state.cache.postsByUser` e `state.cache.commentsByPost` — evita refetch de posts e comentários já buscados |
-| Debounce em inputs           | ✅     | `debounce()` em `main.js`, aplicado aos dois filtros                                     |
-| Estrutura modular            | ✅     | Ver seção [Arquitetura](#arquitetura-do-sistema)                                         |
+| Diferencial                  | Status | Onde                                                                                                         |
+| ---------------------------- | ------ | ------------------------------------------------------------------------------------------------------------ |
+| Cache de dados               | ✅     | `state.cache.postsByUser` e `state.cache.commentsByPost` — evita refetch de posts e comentários já buscados  |
+| Debounce em inputs           | ✅     | `debounce()` em `main.js`, aplicado aos dois filtros                                                         |
+| Estrutura modular            | ✅     | Ver seção [Arquitetura](#arquitetura-do-sistema)                                                             |
 | Testes unitários             | ✅     | 36 testes em `metrics.test.js`, `report.test.js`, `api.test.js`, `googleSheets.test.js` e `userData.test.js` |
-| Integração com Google Sheets | ✅     | `googleSheets.js` + Google Apps Script (Web App)                                         |
+| Integração com Google Sheets | ✅     | `googleSheets.js` + Google Apps Script (Web App)                                                             |
 
 ## Melhorias Adicionais (Além do Escopo Original)
 
@@ -189,7 +193,7 @@ Estes itens não são exigidos pelo case, mas foram adicionados para aproximar o
 | Estados de carregamento (controles desabilitados) | `render.js` (`setControlsDisabled`)                         | Evita cliques duplos disparando requisições concorrentes (condição de corrida) enquanto uma operação assíncrona está em andamento.    |
 | Interface de dashboard técnico                    | `index.html`, `style.css` e `render.js`                     | Organiza usuários, filtros, resultados e ações em painéis claros, com métricas grandes, status em selo e sem dependências externas.   |
 | Feedback acessível de status                      | `index.html` (`aria-live`) e `render.js`                    | Permite que leitores de tela sejam avisados quando mensagens de carregamento, erro ou sucesso mudam dinamicamente.                    |
-| Confirmação visual de CSV                         | `main.js` (`handleGenerateReport`)                          | Deixa claro que o relatório foi gerado e quantos usuários foram exportados, mesmo quando o download do navegador é discreto.           |
+| Confirmação visual de CSV                         | `main.js` (`handleGenerateReport`)                          | Deixa claro que o relatório foi gerado e quantos usuários foram exportados, mesmo quando o download do navegador é discreto.          |
 
 ## Decisões Técnicas
 
@@ -199,17 +203,17 @@ Estes itens não são exigidos pelo case, mas foram adicionados para aproximar o
 
 **Estado centralizado (`state.js`).** Em vez de variáveis soltas em cada arquivo, todo o estado da aplicação vive em um único objeto exportado, atuando como fonte única da verdade. Isso evita inconsistências entre o que é mostrado na tela e os dados realmente carregados.
 
-**Cache de posts e comentários.** O cache começou pelos posts, mas foi estendido para comentários por post (`commentsByPost`) porque o fluxo de relatório reaproveita os mesmos dados várias vezes: seleção individual, geração de CSV, envio simulado e envio ao Google Sheets. Isso reduz requisições repetidas, deixa a aplicação mais rápida em interações subsequentes e diminui dependência de latência externa sem mudar a regra de negócio.
+**Cache de posts e comentários.** O cache começou pelos posts, mas foi estendido para comentários por post (`commentsByPost`) porque o fluxo de relatório reaproveita os mesmos dados várias vezes: seleção individual, geração de CSV, envio simulado e envio ao Google Sheets. Isso evita buscar os mesmos dados várias vezes quando o usuário muda de seleção ou gera novos relatórios, reduzindo o número de requisições e deixando essas operações mais rápidas.
 
 **Separação entre dado bruto e dado filtrado.** `state.posts` sempre guarda os posts sem filtro nenhum aplicado. A cada mudança de filtro, o cálculo é refeito a partir do dado bruto — nunca em cima de um resultado já filtrado anteriormente. Isso evita bugs de "filtro cumulativo" indevido.
 
-**CSV gerado manualmente, sem biblioteca.** Como o formato de saída é simples (texto tabular), optamos por montar o CSV manualmente (incluindo o BOM UTF-8 para acentuação correta no Excel, e escaping de aspas/vírgulas em nomes) em vez de adicionar uma dependência externa (ex: SheetJS) só para essa finalidade.
+**CSV gerado manualmente, sem biblioteca.** Como o formato de saída é simples (texto tabular), optei por montar o CSV manualmente (incluindo o BOM UTF-8 para acentuação correta no Excel, e escaping de aspas/vírgulas em nomes) em vez de adicionar uma dependência externa (ex: SheetJS) só para essa finalidade.
 
 **Google Apps Script em vez da API oficial do Google Sheets.** Ver detalhamento na seção de Problemas e Soluções.
 
-**Não abrir a planilha automaticamente após o envio.** Avaliamos a possibilidade de abrir a planilha em uma nova aba ao clicar em "Enviar para Google Sheets", mas optamos por não fazer isso automaticamente. O campo usado na interface recebe a URL do Web App do Apps Script, não necessariamente a URL visual da planilha; além disso, abrir abas sem uma ação explícita pode ser bloqueado pelo navegador ou parecer intrusivo em uma ferramenta interna. A alternativa mais adequada seria adicionar, no futuro, um campo opcional para a URL da planilha e um link "Abrir planilha" exibido somente após envio bem-sucedido.
+**Não abrir a planilha automaticamente após o envio.** Avaliei a possibilidade de abrir a planilha em uma nova aba ao clicar em "Enviar para Google Sheets", mas foi decidido por não fazer isso automaticamente. O campo usado na interface recebe a URL do Web App do Apps Script, não necessariamente a URL visual da planilha; além disso, abrir abas sem uma ação explícita pode ser bloqueado pelo navegador ou parecer intrusivo em uma ferramenta interna. A alternativa mais adequada seria adicionar, no futuro, um campo opcional para a URL da planilha e um link "Abrir planilha" exibido somente após envio bem-sucedido.
 
-**`aria-live` para feedback dinâmico.** Como o conteúdo de resultados muda sem recarregar a página, adicionamos `aria-live="polite"` ao container de resultados. Esse atributo informa tecnologias assistivas, como leitores de tela, que mudanças naquele trecho devem ser anunciadas. Usamos `polite` porque carregamentos e sucessos não precisam interromper imediatamente a leitura atual; para erros, `render.js` também aplica `role="alert"`, tornando a mensagem mais urgente.
+**`aria-live` para feedback dinâmico.** Como o conteúdo de resultados muda sem recarregar a página, foi adicionado `aria-live="polite"` ao container de resultados. Esse atributo informa tecnologias assistivas, como leitores de tela, que mudanças naquele trecho devem ser anunciadas. Usamos `polite` porque carregamentos e sucessos não precisam interromper imediatamente a leitura atual; para erros, `render.js` também aplica `role="alert"`, tornando a mensagem mais urgente.
 
 **Botões separados para "Gerar Relatório", "Enviar Relatório" e "Enviar para Google Sheets".** Cada botão representa uma responsabilidade distinta do sistema (exportar arquivo local vs. simular envio a um backend vs. integrar com uma planilha real), e mantê-los separados deixa mais claro, tanto no código quanto para quem avalia, que são três ações independentes — em vez de uma única ação "mágica" que faz tudo de uma vez.
 
@@ -225,13 +229,13 @@ Estes itens não são exigidos pelo case, mas foram adicionados para aproximar o
 
 O case pede simulação de envio via `POST /reports`, mas a JSONPlaceholder documenta oficialmente apenas seis recursos fixos: `/posts`, `/comments`, `/albums`, `/photos`, `/todos` e `/users`. Uma requisição para `/reports` retorna 404 genuíno, de forma consistente e reproduzível — confirmado tanto empiricamente (teste direto) quanto na documentação oficial da API.
 
-**Solução:** adaptamos o envio simulado para `POST /posts`, mantendo o payload do relatório completo no corpo da requisição. Isso preserva a intenção do requisito (demonstrar uma simulação de envio via POST, com tratamento de resposta e erro) dentro do que a API de teste realmente suporta, sem inventar comportamento ou mascarar a limitação.
+**Solução:** adaptei o envio simulado para `POST /posts`, mantendo o payload do relatório completo no corpo da requisição. Isso preserva a intenção do requisito (demonstrar uma simulação de envio via POST, com tratamento de resposta e erro) dentro do que a API de teste realmente suporta, sem inventar comportamento ou mascarar a limitação.
 
 ### 2. CORS ao integrar com o Google Apps Script
 
 A primeira tentativa de enviar dados ao Apps Script usando `Content-Type: application/json` disparava uma requisição de pré-voo (`OPTIONS`) que o Apps Script Web App não trata corretamente, resultando em erro de CORS no navegador.
 
-**Solução:** ajustamos o `Content-Type` para `text/plain;charset=utf-8`, técnica documentada para evitar o preflight nesse cenário específico. O corpo continua sendo um JSON válido (como string), e o parse é feito manualmente dentro da função `doPost` no Apps Script.
+**Solução:** ajustei o `Content-Type` para `text/plain;charset=utf-8`, técnica documentada para evitar o preflight nesse cenário específico. O corpo continua sendo um JSON válido (como string), e o parse é feito manualmente dentro da função `doPost` no Apps Script.
 
 ### 3. Divisão por zero ao calcular médias
 
@@ -241,25 +245,15 @@ Usuários sem posts (ou sem posts que atendam ao filtro de caracteres mínimos) 
 
 ### 4. Arredondamento de ponto flutuante em `toFixed`
 
-Durante a escrita dos testes unitários, identificamos que valores como `162.945` não são arredondados de forma "intuitiva" pelo `toFixed(2)` (resultando em `162.94`, não `162.95`), por conta de como números decimais são representados internamente em ponto flutuante binário. Isso não chegou a causar um bug visível na aplicação, mas foi corrigido diretamente no teste unitário para refletir o comportamento real do JavaScript, evitando um falso positivo de teste.
+Durante a escrita dos testes unitários, foi identificado que valores como `162.945` não são arredondados de forma "intuitiva" pelo `toFixed(2)` (resultando em `162.94`, não `162.95`), por conta de como números decimais são representados internamente em ponto flutuante binário. Isso não chegou a causar um bug visível na aplicação, mas foi corrigido diretamente no teste unitário para refletir o comportamento real do JavaScript, evitando um falso positivo de teste.
 
 ### 5. Volume de requisições ao gerar relatório sem cache
 
-Ao gerar o relatório de todos os usuários sem nenhuma seleção prévia (cache vazio), o sistema dispara ~10 requisições de posts e, em seguida, dezenas de requisições de comentários em paralelo. Chegamos a suspeitar que isso causaria falhas de rede, mas os testes confirmaram (via aba Network, status `304`/`200` consistentes) que a JSONPlaceholder suporta esse volume sem problemas. Ainda assim, o cache foi estendido para posts e comentários, reduzindo requisições redundantes em seleções e relatórios subsequentes.
+Ao gerar o relatório de todos os usuários sem nenhuma seleção prévia (cache vazio), o sistema dispara ~10 requisições de posts e, em seguida, dezenas de requisições de comentários em paralelo. Suspeitei que isso causaria falhas de rede, mas os testes confirmaram (via aba Network, status `304`/`200` consistentes) que a JSONPlaceholder suporta esse volume sem problemas. Ainda assim, o cache foi estendido para posts e comentários, reduzindo requisições redundantes em seleções e relatórios subsequentes.
 
-### 6. Bugs pontuais de digitação durante o desenvolvimento
+### 6. Tratamento de erro incompleto em `googleSheets.js`, identificado pelos próprios testes
 
-Ao longo da implementação, surgiram alguns erros de digitação (nome de propriedade DOM escrito incorretamente, IDs de elementos HTML divergentes entre o markup e o JavaScript, chaves de importação com nomes trocados). Esses foram identificados sistematicamente através de logs no console e da aba Network do navegador, reforçando a importância de testar cada etapa isoladamente antes de avançar para a próxima.
-
-### 7. Tratamento de erro incompleto em `googleSheets.js`, identificado pelos próprios testes
-
-Ao escrever os testes unitários de `googleSheets.js`, ficou evidente que a implementação original não verificava `response.ok` (erros HTTP como 500 eram ignorados, caindo direto em uma mensagem genérica) nem tratava falhas de parse do JSON (uma resposta HTML de erro do Google, por exemplo, quebraria com um `SyntaxError` cru em vez de uma mensagem legível). Ajustamos a função para checar o status HTTP antes de tentar o parse, e envolver o parse em seu próprio `try/catch` com mensagem específica. Esse é um exemplo direto de como escrever testes primeiro (ou em paralelo) ajuda a encontrar lacunas de tratamento de erro que passariam despercebidas em testes manuais na interface.
-
-### 8. Pasta do workflow do GitHub Actions nomeada incorretamente
-
-Na primeira tentativa de configurar o CI, o workflow não disparava mesmo com o arquivo `tests.yml` presente no repositório remoto. A causa era um erro de digitação na estrutura de pastas: `.github/.workflows/` (com ponto antes de "workflows") em vez de `.github/workflows/` (sem ponto na segunda pasta). O GitHub exige esse caminho exato — sem ele, o workflow é silenciosamente ignorado, sem erro ou aviso visível.
-
-**Solução:** renomeada a pasta para o caminho correto (`.github/workflows/`), o que fez o workflow ser reconhecido e disparar normalmente a partir do commit seguinte.
+Ao escrever os testes unitários de `googleSheets.js`, ficou evidente que a implementação original não verificava `response.ok` (erros HTTP como 500 eram ignorados, caindo direto em uma mensagem genérica) nem tratava falhas de parse do JSON (uma resposta HTML de erro do Google, por exemplo, quebraria com um `SyntaxError` cru em vez de uma mensagem legível). A função foi ajustada para checar o status HTTP antes de tentar o parse, e envolver o parse em seu próprio `try/catch` com mensagem específica. Esse é um exemplo direto de como escrever testes primeiro (ou em paralelo) ajuda a encontrar lacunas de tratamento de erro que passariam despercebidas em testes manuais na interface.
 
 ## Integração com Google Sheets
 
@@ -299,18 +293,18 @@ function doPost(e) {
       ]);
     });
 
-    return ContentService
-      .createTextOutput(JSON.stringify({ success: true, rowsAdded: rows.length }))
-      .setMimeType(ContentService.MimeType.JSON);
+    return ContentService.createTextOutput(
+      JSON.stringify({ success: true, rowsAdded: rows.length }),
+    ).setMimeType(ContentService.MimeType.JSON);
   } catch (error) {
-    return ContentService
-      .createTextOutput(JSON.stringify({ success: false, error: error.message }))
-      .setMimeType(ContentService.MimeType.JSON);
+    return ContentService.createTextOutput(
+      JSON.stringify({ success: false, error: error.message }),
+    ).setMimeType(ContentService.MimeType.JSON);
   }
 }
 ```
 
-Decidimos documentar o Apps Script no README porque a integração depende de uma configuração externa ao repositório. Sem esse exemplo, o código cliente estaria correto, mas a pessoa avaliadora teria que inferir o formato esperado pelo endpoint. O contrato é simples: a aplicação envia `{ report: [...] }`, e o Apps Script responde `{ success: true, rowsAdded: número }` em caso de sucesso.
+Decidi documentar o Apps Script no README porque a integração depende de uma configuração externa ao repositório. Sem esse exemplo, o código cliente estaria correto, mas a pessoa avaliadora teria que inferir o formato esperado pelo endpoint. O contrato é simples: a aplicação envia `{ report: [...] }`, e o Apps Script responde `{ success: true, rowsAdded: número }` em caso de sucesso.
 
 ## Como Executar
 
