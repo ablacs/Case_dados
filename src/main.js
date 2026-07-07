@@ -89,7 +89,6 @@ function handleFilterChange(event) {
 }
 
 const debouncedFilterChange = debounce(handleFilterChange, 300);
-
 async function handleGenerateReport() {
   if (state.users.length === 0) return;
 
