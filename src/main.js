@@ -30,6 +30,7 @@ async function loadUsers() {
     renderUserOptions(users);
     document.getElementById("results").innerHTML = "";
   } catch (error) {
+    console.error("Error", error);
     renderError(
       "Não foi possível carregar os usuários. Tente recarregar a página.",
     );
@@ -72,6 +73,7 @@ async function handleUserSelect(event) {
     await loadUserPostsAndComments(userId);
     recalculateAndRender();
   } catch (error) {
+    console.error("Error", error);
     renderError("Não foi possível carregar os dados desse usuário.");
   }
 }
